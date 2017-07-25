@@ -94,7 +94,7 @@ module ActiveRecord
       end
 
       def rollback_records
-        ite = records.uniq
+        ite = unique_records
         while record = ite.shift
           record.rolledback!(force_restore_state: full_rollback?)
         end
@@ -109,11 +109,11 @@ module ActiveRecord
       end
 
       def before_commit_records
-        records.uniq.each(&:before_committed!) if @run_commit_callbacks
+        unique_records.each(&:before_committed!) if @run_commit_callbacks
       end
 
       def commit_records
-        ite = records.uniq
+        ite = unique_records
         while record = ite.shift
           if @run_commit_callbacks
             record.committed!
@@ -130,6 +130,12 @@ module ActiveRecord
       def joinable?; @joinable; end
       def closed?; false; end
       def open?; !closed?; end
+
+      private
+
+        def unique_records
+          records.uniq(&:object_id)
+        end
     end
 
     class SavepointTransaction < Transaction
