@@ -46,6 +46,12 @@ class CallbackDeveloperWithHaltedValidation < CallbackDeveloper
   before_validation proc { |model| model.history << [:before_validation, :should_never_get_here] }
 end
 
+class CallbackDeveloperWithNestedUpdate < CallbackDeveloper
+  attr_accessor :nested_developer
+
+  after_save proc { |model| (model.nested_developer = CallbackDeveloperWithNestedUpdate.find(self.id)).update(name: "DHH") if model.name != "DHH" }
+end
+
 class ParentDeveloper < ActiveRecord::Base
   self.table_name = "developers"
   attr_accessor :after_save_called
@@ -251,6 +257,82 @@ class CallbacksTest < ActiveRecord::TestCase
       [ :after_commit,                :proc   ],
       [ :after_commit,                :method ]
     ], david.history
+  end
+
+  def test_create_with_nested_update
+    david = CallbackDeveloperWithNestedUpdate.create
+    assert_equal [
+      [ :after_initialize,            :method ],
+      [ :after_initialize,            :proc   ],
+      [ :after_initialize,            :object ],
+      [ :after_initialize,            :block  ],
+      [ :before_validation,           :method ],
+      [ :before_validation,           :proc   ],
+      [ :before_validation,           :object ],
+      [ :before_validation,           :block  ],
+      [ :after_validation,            :method ],
+      [ :after_validation,            :proc   ],
+      [ :after_validation,            :object ],
+      [ :after_validation,            :block  ],
+      [ :before_save,                 :method ],
+      [ :before_save,                 :proc   ],
+      [ :before_save,                 :object ],
+      [ :before_save,                 :block  ],
+      [ :before_create,               :method ],
+      [ :before_create,               :proc   ],
+      [ :before_create,               :object ],
+      [ :before_create,               :block  ],
+      [ :after_create,                :method ],
+      [ :after_create,                :proc   ],
+      [ :after_create,                :object ],
+      [ :after_create,                :block  ],
+      [ :after_save,                  :method ],
+      [ :after_save,                  :proc   ],
+      [ :after_save,                  :object ],
+      [ :after_save,                  :block  ],
+      [ :after_commit,                :block  ],
+      [ :after_commit,                :object ],
+      [ :after_commit,                :proc   ],
+      [ :after_commit,                :method ]
+    ], david.history
+    assert_equal [
+      [ :after_find,            :method ],
+      [ :after_find,            :proc   ],
+      [ :after_find,            :object ],
+      [ :after_find,            :block  ],
+      [ :after_initialize,            :method ],
+      [ :after_initialize,            :proc   ],
+      [ :after_initialize,            :object ],
+      [ :after_initialize,            :block  ],
+      [ :before_validation,           :method ],
+      [ :before_validation,           :proc   ],
+      [ :before_validation,           :object ],
+      [ :before_validation,           :block  ],
+      [ :after_validation,            :method ],
+      [ :after_validation,            :proc   ],
+      [ :after_validation,            :object ],
+      [ :after_validation,            :block  ],
+      [ :before_save,                 :method ],
+      [ :before_save,                 :proc   ],
+      [ :before_save,                 :object ],
+      [ :before_save,                 :block  ],
+      [ :before_update,               :method ],
+      [ :before_update,               :proc   ],
+      [ :before_update,               :object ],
+      [ :before_update,               :block  ],
+      [ :after_update,                :method ],
+      [ :after_update,                :proc   ],
+      [ :after_update,                :object ],
+      [ :after_update,                :block  ],
+      [ :after_save,                  :method ],
+      [ :after_save,                  :proc   ],
+      [ :after_save,                  :object ],
+      [ :after_save,                  :block  ],
+      [ :after_commit,                :block  ],
+      [ :after_commit,                :object ],
+      [ :after_commit,                :proc   ],
+      [ :after_commit,                :method ]
+    ], david.nested_developer.history
   end
 
   def test_validate_on_create
